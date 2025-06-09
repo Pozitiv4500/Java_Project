@@ -1,0 +1,64 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+build/
+!build/libs
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.settings/
+.metadata/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Node modules (если есть фронтенд)
+node_modules/
+npm-debug.log*
+
+# Test files
+src/test/
+**/test/
+
+# Documentation
+docs/
+README.md
+HELP.md
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Coverage reports
+coverage/
+*.lcov

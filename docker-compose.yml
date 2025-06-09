@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:  
+  postgres:
+    image: postgres:15-alpine
+    container_name: crypto-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-crypto_db}
+      POSTGRES_USER: ${POSTGRES_USER:-crypto_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crypto_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - crypto-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crypto_user} -d ${POSTGRES_DB:-crypto_db}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+    container_name: crypto-app
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/crypto_db}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-crypto_user}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-crypto_password}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      APP_TELEGRAM_BOT_ENABLED: ${APP_TELEGRAM_BOT_ENABLED:-true}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-your_bot_username}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-your_bot_token}       
+      APP_SCHEDULER_ENABLED: ${APP_SCHEDULER_ENABLED:-true}
+      APP_COINGECKO_REQUEST_DELAY: ${APP_COINGECKO_REQUEST_DELAY:-1000}
+      ALPHAVANTAGE_API_KEY: ${ALPHAVANTAGE_API_KEY}
+      APP_NEWS_SCHEDULER_ENABLED: ${APP_NEWS_SCHEDULER_ENABLED:-true}
+      APP_NEWS_SCHEDULER_INITIAL_DELAY: ${APP_NEWS_SCHEDULER_INITIAL_DELAY:-60000}
+      APP_NEWS_SCHEDULER_FIXED_DELAY: ${APP_NEWS_SCHEDULER_FIXED_DELAY:-3600000}
+      LOGGING_LEVEL_COM_EXAMPLE_KAPT: ${LOGGING_LEVEL_COM_EXAMPLE_KAPT:-INFO}
+      JAVA_OPTS: "-Djava.net.preferIPv4Stack=true -Dnetworkaddress.cache.ttl=30 -Djava.net.useSystemProxies=true"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - crypto-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+      - 1.0.0.1
+    volumes:
+      - app_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "java", "-cp", "app.jar", "org.springframework.boot.loader.launch.JarLauncher", "--help"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  crypto-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  app_logs:
+    driver: local
